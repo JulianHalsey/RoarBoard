@@ -8,23 +8,31 @@ function Clubs() {
   const handleSendMessage = async () => {
     if (!userMessage) return;
 
-    // Add user message to responses
+    // Add user message to response
     setResponses((prev) => [...prev, { text: userMessage, sender: 'user' }]);
 
-    // Call DeepAI API using Axios
+    // Call OpenAI API
     try {
-      const response = await axios.post('https://api.deepai.org/api/text-generator', {
-        text: userMessage,  // The user's message goes as the 'text' parameter
+      const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+        model: 'gpt-3.5-turbo',
+        messages: [{ role: 'user', content: userMessage }],
       }, {
         headers: {
-          'Api-Key': 'a5470e98-114e-4329-9e9d-f5b1718fd8c1',  // This thr DeepAI API key
+          'Authorization': `Bearer sk-YOUR_API_KEY`, // Replace wiht API key
+          'Content-Type': 'application/json',
         },
       });
 
-      const aiResponse = response.data.output;
-      setResponses((prev) => [...prev, { text: aiResponse, sender: 'ai' }]);
+      // Check if response contains valid AI message
+      if (response && response.data && response.data.choices && response.data.choices.length > 0) {
+        const aiResponse = response.data.choices[0].message.content;
+        setResponses((prev) => [...prev, { text: aiResponse, sender: 'ai' }]);
+      } else {
+        console.error('Unexpected response structure:', response);
+        setResponses((prev) => [...prev, { text: 'Error: No response from AI', sender: 'ai' }]);
+      }
     } catch (error) {
-      console.error('Error contacting AI:', error);
+      console.error('Error fetching AI response:', error);
       setResponses((prev) => [...prev, { text: 'Error contacting AI. Please try again later.', sender: 'ai' }]);
     }
 
